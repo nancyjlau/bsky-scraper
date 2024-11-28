@@ -8,6 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"
 atproto = "^0.0.55"
+tqdm = "^4.64.1"
 
 [build-system]
 requires = ["poetry-core"]

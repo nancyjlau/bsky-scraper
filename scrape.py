@@ -3,6 +3,7 @@ import json
 import time
 import argparse
 from datetime import datetime
+from tqdm import tqdm
 
 class FirehoseScraper:
     def __init__(self, output_file="bluesky_posts.jsonl", verbose=False):
@@ -13,7 +14,7 @@ class FirehoseScraper:
         self.cache = DidInMemoryCache() 
         self.resolver = IdResolver(cache=self.cache)
         self.verbose = verbose
-        
+        self.pbar = None
         
     def process_message(self, message) -> None:
         """Process a single message from the firehose"""
@@ -38,6 +39,7 @@ class FirehoseScraper:
                 if isinstance(record, dict) and record.get('$type') == 'app.bsky.feed.post':
                     post_data = self._extract_post_data(record, commit.repo, op.path, author_handle)
                     self._save_post_data(post_data)
+                    self.pbar.update(1)
         except Exception as e:
             print(f"Error processing record: {e}")
 
@@ -99,7 +101,7 @@ class FirehoseScraper:
             else:
                 self.process_message(message)
 
-
+        self.pbar = tqdm(total=post_limit if post_limit else float('inf'), unit='posts', ncols=100)
 
         while True:
             try:
@@ -116,6 +118,7 @@ class FirehoseScraper:
 
     def _stop_collection(self):
         """Stop the collection and print summary"""
+        self.pbar.close()
         elapsed = time.time() - self.start_time
         rate = self.post_count / elapsed if elapsed > 0 else 0
         print("\nCollection complete!")
